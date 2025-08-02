@@ -1,0 +1,18 @@
+[
+  {
+    "ContainingType": "CoreApp.DataController",
+    "Method": "GreetUser",
+    "RelativePath": "Data/greet",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CoreApp.DataRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
