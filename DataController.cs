@@ -15,7 +15,7 @@ namespace CoreApp
                 return BadRequest("İsim boş olamaz.");
             }
 
-            string message = $"Merhaba, {request.Req}!";
+            string message = $"Merhaba, {request.Req}!" + (request.Req == "Selcan" ? " Seni Seviyorum": "");
             return Ok(new { Message = message });
         }
     }
