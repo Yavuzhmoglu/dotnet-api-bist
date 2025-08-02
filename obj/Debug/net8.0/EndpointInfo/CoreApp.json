@@ -45,6 +45,10 @@
           "req": {
             "type": "string",
             "nullable": true
+          },
+          "req2": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

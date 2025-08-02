@@ -8,6 +8,7 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod());
 });
 
+builder.WebHost.UseUrls("http://0.0.0.0:10000");
 // Swagger servisini ekle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

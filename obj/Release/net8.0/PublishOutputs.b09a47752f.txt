@@ -1,0 +1,12 @@
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\CoreApp.exe
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\appsettings.Development.json
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\appsettings.json
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\CoreApp.dll
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\CoreApp.deps.json
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\CoreApp.runtimeconfig.json
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\CoreApp.pdb
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\Microsoft.AspNetCore.OpenApi.dll
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\Microsoft.OpenApi.dll
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Release\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.SwaggerUI.dll

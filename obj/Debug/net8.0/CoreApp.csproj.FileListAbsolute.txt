@@ -34,3 +34,4 @@ C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Debug\net8.0\refint\CoreApp.dll
 C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Debug\net8.0\CoreApp.pdb
 C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Debug\net8.0\CoreApp.genruntimeconfig.cache
 C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Debug\net8.0\ref\CoreApp.dll
+C:\Users\YAVUZ\source\repos\CoreApp\CoreApp\obj\Debug\net8.0\CoreApp.sourcelink.json
