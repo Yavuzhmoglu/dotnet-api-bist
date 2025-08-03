@@ -64,10 +64,10 @@ namespace CoreApp
                         var hisse = new HisseVerisi
                         {
                             Tarih = DateTimeOffset.FromUnixTimeSeconds(timestamps[i].GetInt64()).UtcDateTime.AddHours(3), // TRT için +3 saat
-                            Acilis = opens[i].ValueKind != JsonValueKind.Null ? opens[i].GetDecimal() : (decimal?)null,
-                            Yüksek = highs[i].ValueKind != JsonValueKind.Null ? highs[i].GetDecimal() : (decimal?)null,
-                            Dusuk = lows[i].ValueKind != JsonValueKind.Null ? lows[i].GetDecimal() : (decimal?)null,
-                            Kapanis = closes[i].ValueKind != JsonValueKind.Null ? closes[i].GetDecimal() : (decimal?)null,
+                            Acilis = opens[i].ValueKind != JsonValueKind.Null ? Math.Round( opens[i].GetDecimal(),2) : (decimal?)null,
+                            Yüksek = highs[i].ValueKind != JsonValueKind.Null ? Math.Round(highs[i].GetDecimal(),2) : (decimal?)null,
+                            Dusuk = lows[i].ValueKind != JsonValueKind.Null ? Math.Round(lows[i].GetDecimal(),2) : (decimal?)null,
+                            Kapanis = closes[i].ValueKind != JsonValueKind.Null ? Math.Round(closes[i].GetDecimal(),2) : (decimal?)null,
                             Hacim = volumes[i].ValueKind != JsonValueKind.Null ? volumes[i].GetInt64() : (long?)null
                         };
 
