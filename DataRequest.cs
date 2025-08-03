@@ -2,6 +2,8 @@
 {
     public class DataRequest
     {
-        public string Req { get; set; }
+        public string Symbol { get; set; }
+        public string Interval { get; set; }
+        public string Range { get; set; }
     }
 }
