@@ -35,6 +35,99 @@
           }
         }
       }
+    },
+    "/Data/history": {
+      "post": {
+        "tags": [
+          "Data"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/Data/Insert": {
+      "post": {
+        "tags": [
+          "Data"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HamDataResp"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HamDataResp"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HamDataResp"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/Data/GetDataAPI": {
+      "post": {
+        "tags": [
+          "Data"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HamDataResp"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HamDataResp"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HamDataResp"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -42,11 +135,29 @@
       "DataRequest": {
         "type": "object",
         "properties": {
-          "req": {
+          "symbol": {
             "type": "string",
             "nullable": true
           },
-          "req2": {
+          "interval": {
+            "type": "string",
+            "nullable": true
+          },
+          "range": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "HamDataResp": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
             "type": "string",
             "nullable": true
           }

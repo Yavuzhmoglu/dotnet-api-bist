@@ -1,6 +1,22 @@
 [
   {
     "ContainingType": "CoreApp.DataController",
+    "Method": "GetDataAPI",
+    "RelativePath": "Data/GetDataAPI",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CoreApp.HamDataResp",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CoreApp.DataController",
     "Method": "GreetUser",
     "RelativePath": "Data/greet",
     "HttpMethod": "POST",
@@ -10,6 +26,38 @@
       {
         "Name": "request",
         "Type": "CoreApp.DataRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CoreApp.DataController",
+    "Method": "GetHistory",
+    "RelativePath": "Data/history",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CoreApp.DataRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "CoreApp.DataController",
+    "Method": "DataInsert",
+    "RelativePath": "Data/Insert",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "CoreApp.HamDataResp",
         "IsRequired": true
       }
     ],
