@@ -1,16 +1,26 @@
 [
   {
-    "ContainingType": "CoreApp.DataController",
-    "Method": "GetDataAPI",
-    "RelativePath": "Data/GetDataAPI",
-    "HttpMethod": "POST",
+    "ContainingType": "CoreApp.Controllers.WhaleSignalsController",
+    "Method": "Get",
+    "RelativePath": "api/WhaleSignals",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "CoreApp.HamDataResp",
-        "IsRequired": true
+        "Name": "symbols",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "interval",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "range",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -42,22 +52,6 @@
       {
         "Name": "request",
         "Type": "CoreApp.DataRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "CoreApp.DataController",
-    "Method": "DataInsert",
-    "RelativePath": "Data/Insert",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "CoreApp.HamDataResp",
         "IsRequired": true
       }
     ],

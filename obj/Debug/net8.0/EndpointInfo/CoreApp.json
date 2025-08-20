@@ -67,61 +67,34 @@
         }
       }
     },
-    "/Data/Insert": {
-      "post": {
+    "/api/WhaleSignals": {
+      "get": {
         "tags": [
-          "Data"
+          "WhaleSignals"
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HamDataResp"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HamDataResp"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/HamDataResp"
-              }
+        "parameters": [
+          {
+            "name": "symbols",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/Data/GetDataAPI": {
-      "post": {
-        "tags": [
-          "Data"
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HamDataResp"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HamDataResp"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/HamDataResp"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "OK"
@@ -144,20 +117,6 @@
             "nullable": true
           },
           "range": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "HamDataResp": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string",
-            "nullable": true
-          },
-          "value": {
             "type": "string",
             "nullable": true
           }
