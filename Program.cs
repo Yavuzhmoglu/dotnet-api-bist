@@ -17,7 +17,7 @@ builder.Services.AddHttpClient<WhaleIntelService>()
     });
 
 
-builder.WebHost.UseUrls("http://0.0.0.0:10000");
+//builder.WebHost.UseUrls("http://0.0.0.0:10000");
 // Swagger servisini ekle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

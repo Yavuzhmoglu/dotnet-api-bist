@@ -22,14 +22,14 @@ namespace CoreApp.Controllers
         [HttpGet]
         public async Task<IActionResult> Get([FromQuery] string symbols, [FromQuery] string? interval, [FromQuery] string? range)
         {
-            if (string.IsNullOrWhiteSpace(symbols))
+                if (string.IsNullOrWhiteSpace(symbols))
                 return BadRequest(new { error = "symbols zorunlu. Örn: ASELS.IS,THYAO.IS" });
 
             var intv = string.IsNullOrWhiteSpace(interval) ? "1m" : interval!.Trim();
             var rng = string.IsNullOrWhiteSpace(range) ? "5d" : range!.Trim();
 
             var list = new List<WhaleSignal>();
-            foreach (var s in symbols.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct().Take(10))
+            foreach (var s in symbols.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct().Take(100))
             {
                 try
                 {

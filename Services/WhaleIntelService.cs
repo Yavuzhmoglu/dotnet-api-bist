@@ -52,7 +52,7 @@ namespace CoreApp.Services
                 // --- Toplama (dipte büyük hacim, küçük gövde, önceki mini trend ↓)
                 if (rvol >= 2.0 && bodyRatio <= 0.25 && last5 < 0)
                 {
-                    sigs.Add(Make(symbol, interval, c.Time, "Toplama",
+                    sigs.Add(Make(symbol, interval, c.Close.ToString("F2"), c.Open.ToString("F2"), c.Time, "Toplama",
                         $"Büyük hacim (RVOL≈{rvol:0.0}) + küçük mum; son 5 bar zayıf. Dipte balina topluyor olabilir."));
                     continue;
                 }
@@ -60,7 +60,7 @@ namespace CoreApp.Services
                 // --- Dağıtım (tepede büyük hacim, küçük gövde, önceki mini trend ↑)
                 if (rvol >= 2.0 && bodyRatio <= 0.25 && last5 > 0)
                 {
-                    sigs.Add(Make(symbol, interval, c.Time, "Dağıtım",
+                    sigs.Add(Make(symbol, interval, c.Close.ToString("F2"), c.Open.ToString("F2"), c.Time, "Dağıtım",
                         $"Büyük hacim (RVOL≈{rvol:0.0}) + küçük mum; son 5 bar güçlü. Zirvede balina dağıtıyor olabilir."));
                     continue;
                 }
@@ -68,7 +68,7 @@ namespace CoreApp.Services
                 // --- Alış (momentum) : anormal yukarı getiri + yüksek hacim
                 if (c.Return >= 2.0 * rStd50 && rvol >= 2.0)
                 {
-                    sigs.Add(Make(symbol, interval, c.Time, "Alış",
+                    sigs.Add(Make(symbol, interval, c.Close.ToString("F2"), c.Open.ToString("F2"), c.Time, "Alış",
                         $"Anormal yukarı hareket (|r|≥2σ) ve yüksek hacim (RVOL≈{rvol:0.0}). Balina girişi sinyali."));
                     continue;
                 }
@@ -76,7 +76,7 @@ namespace CoreApp.Services
                 // --- Satış (momentum) : anormal aşağı getiri + yüksek hacim
                 if (c.Return <= -2.0 * rStd50 && rvol >= 2.0)
                 {
-                    sigs.Add(Make(symbol, interval, c.Time, "Satış",
+                    sigs.Add(Make(symbol, interval, c.Close.ToString("F2"), c.Open.ToString("F2"), c.Time, "Satış",
                         $"Anormal aşağı hareket (|r|≥2σ) ve yüksek hacim (RVOL≈{rvol:0.0}). Balina çıkışı sinyali."));
                     continue;
                 }
@@ -85,10 +85,10 @@ namespace CoreApp.Services
                 if (bodyRatio >= 0.7 && rvol >= 1.5)
                 {
                     if (c.IsUp)
-                        sigs.Add(Make(symbol, interval, c.Time, "Satış",
+                        sigs.Add(Make(symbol, interval, c.Close.ToString("F2"), c.Open.ToString("F2"), c.Time, "Satış",
                             $"CLIMAX UP: Büyük gövde + yüksek hacim. Tepede kâr realizasyonu/dağıtım riski."));
                     else
-                        sigs.Add(Make(symbol, interval, c.Time, "Alış",
+                        sigs.Add(Make(symbol, interval, c.Close.ToString("F2"), c.Open.ToString("F2"), c.Time, "Alış",
                             $"CLIMAX DOWN: Büyük gövde + yüksek hacim. Dipte tepki/Toplama ihtimali."));
                     continue;
                 }
@@ -104,13 +104,13 @@ namespace CoreApp.Services
 
                         if (gap >= 2.0 * atr14 && rvol >= 2.0)
                         {
-                            sigs.Add(Make(symbol, interval, c.Time, "Alış",
+                            sigs.Add(Make(symbol, interval, c.Close.ToString("F2"), c.Open.ToString("F2"), c.Time, "Alış",
                                 $"Gap-Up (≥2×ATR) ve yüksek hacim (RVOL≈{rvol:0.0}). Momentum long."));
                             continue;
                         }
                         if (gap <= -2.0 * atr14 && rvol >= 2.0)
                         {
-                            sigs.Add(Make(symbol, interval, c.Time, "Satış",
+                            sigs.Add(Make(symbol, interval, c.Close.ToString("F2"), c.Open.ToString("F2"), c.Time, "Satış",
                                 $"Gap-Down (≥2×ATR) ve yüksek hacim (RVOL≈{rvol:0.0}). Momentum short."));
                             continue;
                         }
@@ -121,7 +121,7 @@ namespace CoreApp.Services
             return sigs;
         }
 
-        private static WhaleSignal Make(string sym, string intv, DateTime t, string action, string reason)
-            => new WhaleSignal { Symbol = sym, Interval = intv, Time = t, Action = action, Reason = reason };
+        private static WhaleSignal Make(string sym, string intv, string value, string open, DateTime t, string action, string reason)
+            => new WhaleSignal { Symbol = sym, Interval = intv, Value = value, Open = open, Time = t, Action = action, Reason = reason };
     }
 }
