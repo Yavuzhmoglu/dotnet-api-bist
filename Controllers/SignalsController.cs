@@ -29,8 +29,8 @@ namespace CoreApp.Controllers
             var rng = string.IsNullOrWhiteSpace(range) ? "5d" : range!.Trim();
 
             var list = new List<WhaleSignal>();
-            foreach (var s in symbols.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct().Take(100))
-            {
+            foreach (var s in symbols.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct().Take(1000))
+         {
                 try
                 {
                     var sigs = await _svc.GetWhaleSignalsAsync(s, intv, rng);
