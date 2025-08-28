@@ -18,12 +18,12 @@ namespace CoreApp.Services
 
         public class Settings
         {
-            public int MinCandles { get; set; } = 60;
-            public int LookbackVolume { get; set; } = 20;
-            public int LookbackReturns { get; set; } = 50;
+            public int MinCandles { get; set; } = 120;
+            public int LookbackVolume { get; set; } = 50;
+            public int LookbackReturns { get; set; } = 100;
             public int TopN { get; set; } = 5;
             public int CooldownSeconds { get; set; } = 120;
-            public int ImportantThreshold { get; set; } = 70;
+            public int ImportantThreshold { get; set; } = 80;
             public bool MultiTimeframeConfirmation { get; set; } = true;
             public string ConfirmationInterval { get; set; } = "5m";
             public string ConfirmationRange { get; set; } = "1d";
