@@ -33,7 +33,7 @@ namespace CoreApp.Controllers
          {
                 try
                 {
-                    var sigs = await _svc.GetWhaleSignalsAsync(s, intv, rng);
+                    var sigs = await _svc.GetTopImportantSignalsAsync(s, intv, rng);
                     list.AddRange(sigs);
                 }
                 catch (Exception ex)
