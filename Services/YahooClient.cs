@@ -21,7 +21,7 @@ namespace CoreApp.Services
             _http.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         }
 
-        public static async Task<List<Candle>> GetCandlesAsync(string symbol, string interval, string range)
+        public static async Task<List<Candle1>> GetCandlesAsync(string symbol, string interval, string range)
         {
             var path = $"v8/finance/chart/{symbol}?interval={interval}&range={range}";
             await _yahooGate.WaitAsync();
@@ -64,7 +64,7 @@ namespace CoreApp.Services
                         var volumes = quote.GetProperty("volume").EnumerateArray().Select(x => x.ValueKind == JsonValueKind.Number ? x.GetDouble() : 0.0).ToArray();
 
                         int n = timestamps.Length;
-                        var list = new List<Candle>(n);
+                        var list = new List<Candle1>(n);
                         for (int i = 0; i < n; i++)
                         {
                             if (double.IsNaN(opens[i]) || double.IsNaN(highs[i]) || double.IsNaN(lows[i]) || double.IsNaN(closes[i]))
@@ -73,7 +73,7 @@ namespace CoreApp.Services
                             var utc = DateTimeOffset.FromUnixTimeSeconds(timestamps[i]);
                             var local = utc.ToOffset(TimeSpan.FromSeconds(tzOffset)).DateTime;
 
-                            list.Add(new Candle
+                            list.Add(new Candle1
                             {
                                 Time = local,
                                 Open = opens[i],

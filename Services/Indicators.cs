@@ -27,7 +27,7 @@ namespace CoreApp.Services
             return Math.Sqrt(s / length);
         }
 
-        public static double ATR(IReadOnlyList<Candle> c, int endExclusive, int length)
+        public static double ATR(IReadOnlyList<Candle1> c, int endExclusive, int length)
         {
             if (endExclusive < length + 1) return double.NaN;
             double sum = 0;
@@ -79,7 +79,7 @@ namespace CoreApp.Services
             return (v[endExclusive - 1] - m) / s;
         }
 
-        public static double OBVSlope(IReadOnlyList<Candle> candles, int endExclusive, int window)
+        public static double OBVSlope(IReadOnlyList<Candle1> candles, int endExclusive, int window)
         {
             if (endExclusive < window) return 0;
             var closes = candles.Select(c => (double)c.Close).ToArray();
@@ -97,7 +97,7 @@ namespace CoreApp.Services
             return (obv[^1] - obv[0]) / Math.Max(1.0, window);
         }
 
-        public static double ADX(IReadOnlyList<Candle> candles, int endExclusive, int period = 14)
+        public static double ADX(IReadOnlyList<Candle1> candles, int endExclusive, int period = 14)
         {
             int start = endExclusive - period - 1;
             if (start < 0) return double.NaN;
@@ -126,7 +126,7 @@ namespace CoreApp.Services
             return dx; // 0..1 approx
         }
 
-        public static double VWAP(IReadOnlyList<Candle> candles, int endExclusive, int lookback)
+        public static double VWAP(IReadOnlyList<Candle1> candles, int endExclusive, int lookback)
         {
             int start = Math.Max(0, endExclusive - lookback + 1);
             double pv = 0;

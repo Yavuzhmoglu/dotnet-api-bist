@@ -1,6 +1,6 @@
 ﻿namespace CoreApp.Models
 {
-    public class Candle
+    public class Candle1
     {
         public DateTime Time { get; set; }
         public double Open { get; set; }

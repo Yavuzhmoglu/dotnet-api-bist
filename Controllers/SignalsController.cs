@@ -1,8 +1,6 @@
 ﻿using CoreApp.Models;
 using CoreApp.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace CoreApp.Controllers
 {
@@ -14,27 +12,32 @@ namespace CoreApp.Controllers
         public WhaleSignalsController(WhaleIntelService svc) => _svc = svc;
 
         /// <summary>
-        /// Son kullanıcı odaklı sinyaller: Alış / Satış / Toplama / Dağıtım
+        /// Son kullanıcı odaklı sinyaller: Alış / Satış / Bekle
         /// </summary>
         /// <param name="symbols">Virgülle ayrılmış semboller (örn: ASELS.IS,THYAO.IS)</param>
-        /// <param name="interval">örn: 1m, 5m, 15m, 1h, 1d</param>
-        /// <param name="range">örn: 1d, 5d, 1mo, 3mo, 1y</param>
+        /// <param name="interval">örn: 1d (şimdilik yalnızca günlük destekleniyor)</param>
+        /// <param name="range">örn: 6mo (şimdilik yalnızca 6 ay)</param>
         [HttpGet]
         public async Task<IActionResult> Get([FromQuery] string symbols, [FromQuery] string? interval, [FromQuery] string? range)
         {
-                if (string.IsNullOrWhiteSpace(symbols))
+            if (string.IsNullOrWhiteSpace(symbols))
                 return BadRequest(new { error = "symbols zorunlu. Örn: ASELS.IS,THYAO.IS" });
 
-            var intv = string.IsNullOrWhiteSpace(interval) ? "1m" : interval!.Trim();
-            var rng = string.IsNullOrWhiteSpace(range) ? "5d" : range!.Trim();
+            var intv = string.IsNullOrWhiteSpace(interval) ? "1d" : interval!.Trim();
+            var rng = string.IsNullOrWhiteSpace(range) ? "6mo" : range!.Trim();
 
             var list = new List<WhaleSignal>();
+
             foreach (var s in symbols.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct().Take(1000))
-         {
+            {
                 try
                 {
-                    var sigs = await _svc.GetTopImportantSignalsAsync(s, intv, rng);
-                    list.AddRange(sigs);
+                    var sig = await _svc.AnalyzeDailySymbolAsSignalAsync(s);
+                    if (sig != null)
+                    {
+                        sig.Interval = intv;
+                        list.Add(sig);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -44,7 +47,9 @@ namespace CoreApp.Controllers
                         Interval = intv,
                         Time = DateTime.UtcNow,
                         Action = "Hata",
-                        Reason = ex.Message
+                        Reason = ex.Message,
+                        Score = 0,
+                        Confidence = 0
                     });
                 }
             }

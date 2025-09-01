@@ -4,21 +4,18 @@
     {
         public string Symbol { get; set; } = "";
         public string Interval { get; set; } = "";
-        public string Value { get; set; } = "";    // close as string
+        public string Value { get; set; } = "";
         public string Open { get; set; } = "";
         public DateTime Time { get; set; }
-        public string Action { get; set; } = "";   // Alış, Satış, Toplama, Dağıtım, Öngörü
+        public string Action { get; set; } = "";
         public string Reason { get; set; } = "";
 
-        // Scoring & meta
-        public int Score { get; set; } = 0;        // 0..100
-        public double Confidence { get; set; } = 0; // 0..1
-        public int Confirmations { get; set; } = 0;
+        // meta
+        public int Score { get; set; }
+        public double Confidence { get; set; }
         public string SuggestedAction { get; set; } = "";
-
-        // Prediction fields (optional)
-        public double? PredictedUpProbability { get; set; }
-        public double? ExpectedReturnPct { get; set; }
-        public int PredictionHorizonBars { get; set; } = 5;
     }
+
+    // Kullanılan Candle tipi
+    public record Candle(DateTime Time, double Open, double High, double Low, double Close, double Volume);
 }
