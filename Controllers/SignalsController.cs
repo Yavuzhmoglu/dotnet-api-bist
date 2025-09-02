@@ -32,11 +32,10 @@ namespace CoreApp.Controllers
             {
                 try
                 {
-                    var sig = await _svc.AnalyzeDailySymbolAsSignalAsync(s);
+                    var sig = await _svc.AnalyzeDailySymbolSignalsAsync(s, intv, rng);
                     if (sig != null)
                     {
-                        sig.Interval = intv;
-                        list.Add(sig);
+                        list.AddRange(sig);
                     }
                 }
                 catch (Exception ex)

@@ -11,7 +11,7 @@
         public string Reason { get; set; } = "";
 
         // meta
-        public int Score { get; set; }
+        public double Score { get; set; }
         public double Confidence { get; set; }
         public string SuggestedAction { get; set; } = "";
     }
