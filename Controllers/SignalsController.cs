@@ -18,7 +18,7 @@ namespace CoreApp.Controllers
         /// <param name="interval">örn: 1d (şimdilik yalnızca günlük destekleniyor)</param>
         /// <param name="range">örn: 6mo (şimdilik yalnızca 6 ay)</param>
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] string symbols, [FromQuery] string? interval, [FromQuery] string? range)
+        public async Task<IActionResult> Get([FromQuery] string symbols, [FromQuery] string? interval, [FromQuery] string? range, [FromQuery] int? backtest)
         {
             if (string.IsNullOrWhiteSpace(symbols))
                 return BadRequest(new { error = "symbols zorunlu. Örn: ASELS.IS,THYAO.IS" });
@@ -32,7 +32,7 @@ namespace CoreApp.Controllers
             {
                 try
                 {
-                    var sig = await _svc.AnalyzeDailySymbolSignalsAsync(s, intv, rng);
+                    var sig = await _svc.AnalyzeDailySymbolAsSignalsAsync(s, intv, rng, backtest.Value);
                     if (sig != null)
                     {
                         list.AddRange(sig);

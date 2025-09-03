@@ -93,6 +93,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "backtest",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
           }
         ],
         "responses": {

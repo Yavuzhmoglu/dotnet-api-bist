@@ -4,18 +4,10 @@
     {
         public string Symbol { get; set; } = "";
         public string Interval { get; set; } = "";
-        public string Value { get; set; } = "";
-        public string Open { get; set; } = "";
         public DateTime Time { get; set; }
-        public string Action { get; set; } = "";
-        public string Reason { get; set; } = "";
-
-        // meta
-        public double Score { get; set; }
-        public double Confidence { get; set; }
-        public string SuggestedAction { get; set; } = "";
+        public string Action { get; set; } = "";   // "Al", "Sat", "Bekle", "Hata"
+        public string Reason { get; set; } = "";   // Neden bu sinyal üretildi
+        public double Score { get; set; }          // Backtest skoru (0-100)
+        public double Confidence { get; set; }     // Güven yüzdesi (0-100)
     }
-
-    // Kullanılan Candle tipi
-    public record Candle(DateTime Time, double Open, double High, double Low, double Close, double Volume);
 }
