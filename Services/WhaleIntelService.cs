@@ -59,6 +59,7 @@ namespace CoreApp.Services
                         Symbol = symbol,
                         Interval = "1d",
                         Time = c.Time,
+                        Value= c.Close.ToString("F2"),
                         Action = action,
                         Reason = reason ?? "",
                         Score = 0,
