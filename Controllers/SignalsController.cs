@@ -32,7 +32,7 @@ namespace CoreApp.Controllers
             {
                 try
                 {
-                    var sig = await _svc.AnalyzeDailySymbolAsSignalsAsync(s, intv, rng, backtest.Value);
+                    var sig = await _svc.AnalyzeDailySymbolAsSignalsAsync(s, rng, backtest.Value);
                     if (sig != null)
                     {
                         list.AddRange(sig);
