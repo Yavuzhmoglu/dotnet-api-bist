@@ -37,6 +37,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Defense in depth: any unhandled exception returns JSON instead of a bare empty 500,
+// and gets logged so failures are visible in Render's logs.
+app.UseExceptionHandler(errApp =>
+{
+    errApp.Run(async context =>
+    {
+        var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogError(feature?.Error, "Unhandled exception on {Path}", feature?.Path);
+
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsJsonAsync(new { error = "Sunucu hatası oluştu." });
+    });
+});
+
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();

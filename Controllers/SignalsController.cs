@@ -40,8 +40,20 @@ namespace CoreApp.Controllers
             var rng = string.IsNullOrWhiteSpace(range) ? "1y" : range!.Trim();
             var idx = string.IsNullOrWhiteSpace(marketIndex) ? "XU100.IS" : marketIndex!.Trim();
 
-            // Fetched ONCE per request batch (cached ~90s), not once per symbol.
-            var marketIndexCandles = await _svc.GetCandlesCachedAsync(idx, "1d", rng);
+            // Fetched ONCE per request batch (cached ~90s), not once per symbol. If Yahoo is
+            // unreachable/rate-limited for the index symbol, degrade gracefully instead of failing
+            // the whole batch -- AnalyzeSymbolLiveAsync already treats an empty/short index list as
+            // "skip the market-trend confirmation this cycle" (per-symbol Toplama/Dağıtım/Bekle
+            // scoring doesn't depend on it at all).
+            List<Candle1> marketIndexCandles;
+            try
+            {
+                marketIndexCandles = await _svc.GetCandlesCachedAsync(idx, "1d", rng);
+            }
+            catch
+            {
+                marketIndexCandles = new List<Candle1>();
+            }
 
             var symbolList = symbols
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
