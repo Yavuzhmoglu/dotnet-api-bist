@@ -15,7 +15,7 @@ namespace CoreApp.Services
             _http = new HttpClient
             {
                 BaseAddress = _base,
-                Timeout = TimeSpan.FromSeconds(120)
+                Timeout = TimeSpan.FromSeconds(15) // fail fast rather than hang a batch of hundreds of symbols
             };
             _http.DefaultRequestHeaders.UserAgent.ParseAdd("BalinaTespitiApi/1.0");
             _http.DefaultRequestHeaders.Accept.ParseAdd("application/json");
@@ -88,9 +88,14 @@ namespace CoreApp.Services
 
                     if ((int)resp.StatusCode == 429 || resp.StatusCode == HttpStatusCode.ServiceUnavailable)
                     {
+                        // Cap the wait regardless of what Yahoo's Retry-After says: with hundreds of
+                        // symbols funneled through a 2-wide gate, honoring a long Retry-After verbatim
+                        // per symbol can turn a batch into an hours-long hang. Fail fast instead --
+                        // a persistently rate-limited/blocked source IP won't be fixed by waiting longer.
                         var retryAfter = resp.Headers.RetryAfter?.Delta ?? TimeSpan.Zero;
-                        var delay = retryAfter > TimeSpan.Zero ? retryAfter : TimeSpan.FromMilliseconds(300 * Math.Pow(2, attempt - 1));
-                        if (attempt >= 3) resp.EnsureSuccessStatusCode();
+                        var uncapped = retryAfter > TimeSpan.Zero ? retryAfter : TimeSpan.FromMilliseconds(300 * Math.Pow(2, attempt - 1));
+                        var delay = uncapped > TimeSpan.FromSeconds(2) ? TimeSpan.FromSeconds(2) : uncapped;
+                        if (attempt >= 2) resp.EnsureSuccessStatusCode();
                         await Task.Delay(delay);
                         continue;
                     }
