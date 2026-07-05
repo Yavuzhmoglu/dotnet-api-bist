@@ -11,4 +11,4 @@ WORKDIR /app
 COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:10000
 EXPOSE 10000
-ENTRYPOINT ["dotnet", "CoreApp.dll"]  # dll adını kendi projenle değiştir
+ENTRYPOINT ["dotnet", "CoreApp.dll"]
