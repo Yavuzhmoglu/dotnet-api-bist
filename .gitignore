@@ -1,0 +1,54 @@
+## .NET / Visual Studio
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Rider / VS Code
+.idea/
+*.sln.iml
+.vscode/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# Publish / deploy
+**/Properties/PublishProfiles/*.pubxml
+*.publishsettings
+PublishScripts/
+
+# Secrets / environment
+appsettings.*.local.json
+secrets.json
+*.env
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
