@@ -12,3 +12,4 @@
         public double Confidence { get; set; }     // Güven yüzdesi (0-100)
     }
 }
+//yavuz
