@@ -9,14 +9,7 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
-builder.Services.AddHttpClient<WhaleIntelService>()
-    .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-    .ConfigureHttpClient(c =>
-    {
-        c.Timeout = TimeSpan.FromSeconds(60); // 60 saniye timeout
-    });
-
-
+builder.Services.Configure<AccumulationWeights>(builder.Configuration.GetSection("AccumulationWeights"));
 
 
 builder.WebHost.UseUrls("http://0.0.0.0:10000");
@@ -29,7 +22,7 @@ builder.Services.AddMemoryCache();
 
 
 builder.Services.AddScoped<WhaleIntelService>();
-// HttpClient DI (Yahoo için)
+// HttpClient DI (Yahoo iï¿½in)
 builder.Services.AddHttpClient();
 
 // WhaleIntelService DI
@@ -37,7 +30,7 @@ builder.Services.AddHttpClient();
 var app = builder.Build();
 
 app.UseCors("AllowReactApp");
-// Geliþtirme ortamýnda Swagger'ý etkinleþtir
+// Geliï¿½tirme ortamï¿½nda Swagger'ï¿½ etkinleï¿½tir
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

@@ -1,221 +1,301 @@
-﻿using CoreApp.Models;
+using CoreApp.Models;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using YahooFinanceApi;
 
 namespace CoreApp.Services
 {
     public class WhaleIntelService
     {
-        /// <summary>
-        /// Günlük ve 4 saatlik mumları, piyasa trendini, mum formasyonlarını analiz ederek sinyaller üretir ve backtest yapar.
-        /// </summary>
-        public async Task<List<WhaleSignal>> AnalyzeDailySymbolAsSignalsAsync(string symbol, string range, int backtestDays = 3, string marketIndexSymbol = "XU100.IS")
+        private readonly IMemoryCache _cache;
+        private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(90); // > frontend's 60s poll interval
+
+        public WhaleIntelService(IMemoryCache cache)
         {
-            var dailyCandles = await YahooClient.GetCandlesAsync(symbol, "1d", range);
-            var hourlyCandles = await YahooClient.GetCandlesAsync(symbol, "4h", range);
-            var marketIndexCandles = await YahooClient.GetCandlesAsync(marketIndexSymbol, "1d", range);
-
-            var dailyCloses = dailyCandles.Select(c => c.Close).ToList();
-            var hourlyCloses = hourlyCandles.Select(c => c.Close).ToList();
-            var marketIndexCloses = marketIndexCandles.Select(c => c.Close).ToList();
-            var signals = new List<WhaleSignal>();
-
-            // Ana döngü başlamadan önce minimum veri kontrolü
-            if (dailyCandles.Count < 50 || hourlyCandles.Count < 50 || marketIndexCandles.Count < 50)
-            {
-                return signals;
-            }
-
-            for (int i = 0; i < dailyCandles.Count; i++)
-            {
-                var c = dailyCandles[i];
-                string? action = null;
-                string? reason = null;
-
-                // --- Günlük Manipülasyon ve Kaufman Kama Sinyalleri ---
-                var avgVol = dailyCandles.Skip(Math.Max(0, i - 20)).Take(20).Average(x => x.Volume);
-                if (c.Volume > avgVol * 1.5)
-                {
-                    if (c.Close > c.Open) action = "Al";
-                    else if (c.Close < c.Open) action = "Sat";
-                }
-
-                var kamaRange = dailyCandles.Skip(Math.Max(0, i - 10)).Take(10).ToList();
-                if (kamaRange.Count == 10)
-                {
-                    var maxHigh = kamaRange.Max(x => x.High);
-                    var minLow = kamaRange.Min(x => x.Low);
-                    var kamaWidth = (maxHigh - minLow) / minLow * 100;
-
-                    if (kamaWidth < 3)
-                    {
-                        if (c.Close > maxHigh) { action = "Al"; reason = "Kaufman Kama yukarı kırılımı"; }
-                        else if (c.Close < minLow) { action = "Sat"; reason = "Kaufman Kama aşağı kırılımı"; }
-                    }
-                }
-
-                // --- Mum Formasyonu Onayı (İndeks 0 ve 1 için kontrol) ---
-                if (i > 0)
-                {
-                    var previousCandle = dailyCandles[i - 1];
-
-                    if (c.Close > c.Open && previousCandle.Close < previousCandle.Open && c.Low < previousCandle.Low && c.High > previousCandle.High)
-                    {
-                        if (action == null) action = "Al";
-                        reason = (reason ?? "") + " + Yutan Boğa Deseni";
-                    }
-                    else if (c.Close < c.Open && previousCandle.Close > previousCandle.Open && c.Low < previousCandle.Low && c.High > previousCandle.High)
-                    {
-                        if (action == null) action = "Sat";
-                        reason = (reason ?? "") + " + Yutan Ayı Deseni";
-                    }
-
-                    double body = Math.Abs(c.Close - c.Open);
-                    double lowerShadow = Math.Min(c.Open, c.Close) - c.Low;
-                    double upperShadow = c.High - Math.Max(c.Open, c.Close);
-
-                    if (lowerShadow > (body * 2) && upperShadow < (body * 0.5))
-                    {
-                        if (dailyCandles[i - 1].Close > c.Close)
-                        {
-                            if (action == null) action = "Al";
-                            reason = (reason ?? "") + " + Çekiç Deseni";
-                        }
-                        else if (dailyCandles[i - 1].Close < c.Close)
-                        {
-                            if (action == null) action = "Sat";
-                            reason = (reason ?? "") + " + Asılı Adam Deseni";
-                        }
-                    }
-                }
-
-                if (i > 2)
-                {
-                    var c1 = dailyCandles[i - 2];
-                    var c2 = dailyCandles[i - 1];
-                    var c3 = dailyCandles[i];
-                    // Üç Beyaz Asker
-                    if (c1.Close > c1.Open && c2.Close > c2.Open && c3.Close > c3.Open &&
-                        c2.Close > c1.Close && c3.Close > c2.Close)
-                    {
-                        if (action == null) action = "Al";
-                        reason = (reason ?? "") + " + Üç Beyaz Asker Deseni";
-                    }
-                    // Üç Siyah Karga
-                    else if (c1.Close < c1.Open && c2.Close < c2.Open && c3.Close < c3.Open &&
-                             c2.Close < c1.Close && c3.Close < c2.Close)
-                    {
-                        if (action == null) action = "Sat";
-                        reason = (reason ?? "") + " + Üç Siyah Karga Deseni";
-                    }
-                }
-
-                // --- Sinyal Onayı ve Filtreleme (Yeterli veri kontrolü en kritik nokta) ---
-                if (action != null && i >= 50)
-                {
-                    // 1. Piyasa Trendi Analizi
-                    if (marketIndexCloses.Count > 50)
-                    {
-                        double marketEma50 = EMA(marketIndexCloses, 50, i);
-                        if (!double.IsNaN(marketEma50) && ((action == "Al" && marketIndexCloses[i] < marketEma50) || (action == "Sat" && marketIndexCloses[i] > marketEma50)))
-                        {
-                            action = null;
-                            reason = null;
-                        }
-                    }
-
-                    // 2. Multiframe (4 saatlik) Trend Onayı
-                    var relevantHourlyIndex = hourlyCandles.FindIndex(h => h.Time >= c.Time.AddHours(-24) && h.Time <= c.Time.AddHours(1));
-                    if (action != null && relevantHourlyIndex != -1 && relevantHourlyIndex >= 50)
-                    {
-                        double hourlyEma10 = EMA(hourlyCloses, 10, relevantHourlyIndex);
-                        double hourlyEma50 = EMA(hourlyCloses, 50, relevantHourlyIndex);
-
-                        if (!double.IsNaN(hourlyEma10) && !double.IsNaN(hourlyEma50) && ((action == "Al" && hourlyEma10 <= hourlyEma50) || (action == "Sat" && hourlyEma10 >= hourlyEma50)))
-                        {
-                            action = null;
-                            reason = null;
-                        }
-                    }
-
-                    // Eğer sinyal tüm filtreleri geçerse
-                    if (action != null)
-                    {
-                        double dailyEma10 = EMA(dailyCloses, 10, i);
-                        double dailyEma50 = EMA(dailyCloses, 50, i);
-                        var (macd, signalLine) = MACD(dailyCloses, i);
-                        double rsi = RSI(dailyCloses, 14, i);
-
-                        if (!double.IsNaN(dailyEma10) && !double.IsNaN(dailyEma50) && !double.IsNaN(macd) && !double.IsNaN(rsi))
-                        {
-                            if (action == "Al" && dailyEma10 > dailyEma50 && macd > signalLine && rsi < 70)
-                                reason = (reason ?? "") + " + Trend/Momentum onayı";
-                            else if (action == "Sat" && dailyEma10 < dailyEma50 && macd < signalLine && rsi > 30)
-                                reason = (reason ?? "") + " + Trend/Momentum onayı";
-                        }
-                        else
-                        {
-                            action = null; reason = null; // Yeterli veri yoksa sinyali iptal et
-                        }
-
-                        if (action != null)
-                        {
-                            var signal = new WhaleSignal
-                            {
-                                Symbol = symbol,
-                                Interval = "1d",
-                                Time = c.Time,
-                                Value = c.Close.ToString("F2"),
-                                Action = action,
-                                Reason = reason ?? "Z Formasyon",
-                                Score = 0,
-                                Confidence = 0
-                            };
-
-                            // --- Backtest ve Dinamik Stop-Loss/Take-Profit ---
-                            if (i + backtestDays < dailyCandles.Count)
-                            {
-                                var entry = c.Close;
-                                var future = dailyCandles[i + backtestDays].Close;
-                                double atr = ATR(dailyCandles, 14, i);
-                                if (!double.IsNaN(atr))
-                                {
-                                    double stopLossMultiple = 2;
-                                    double takeProfitMultiple = 3;
-                                    double score = 0;
-
-                                    if (action == "Al")
-                                    {
-                                        double stopLoss = entry - (atr * stopLossMultiple);
-                                        double takeProfit = entry + (atr * takeProfitMultiple);
-                                        if (future >= takeProfit) score = 100;
-                                        else if (future <= stopLoss) score = 0;
-                                        else score = Math.Min(100, (future - stopLoss) / (takeProfit - stopLoss) * 100);
-                                    }
-                                    else
-                                    {
-                                        double stopLoss = entry + (atr * stopLossMultiple);
-                                        double takeProfit = entry - (atr * takeProfitMultiple);
-                                        if (future <= takeProfit) score = 100;
-                                        else if (future >= stopLoss) score = 0;
-                                        else score = Math.Min(100, (stopLoss - future) / (stopLoss - takeProfit) * 100);
-                                    }
-                                    signal.Score = Math.Round(score, 2);
-                                    signal.Confidence = Math.Round(score, 2);
-                                }
-                            }
-                            signals.Add(signal);
-                        }
-                    }
-                }
-            }
-            return signals;
+            _cache = cache;
         }
 
-        // --- Yardımcı Metotlar (Hata Kontrollü) ---
+        public async Task<List<Candle1>> GetCandlesCachedAsync(string symbol, string interval, string range)
+        {
+            var key = $"candles:{symbol}:{interval}:{range}";
+            if (_cache.TryGetValue(key, out List<Candle1>? cached) && cached != null)
+                return cached;
+
+            var candles = await YahooClient.GetCandlesAsync(symbol, interval, range);
+            _cache.Set(key, candles, CacheTtl);
+            return candles;
+        }
+
+        /// <summary>
+        /// Live "right now" read for a single symbol: one composite anomaly/accumulation score plus
+        /// a breakout-confirmation gate, computed using only data through the most recent bar (never
+        /// future data -- see AccumulationScoring.Compute). Returns exactly one signal representing
+        /// today's state, not a growing history of past pattern matches.
+        /// </summary>
+        public async Task<WhaleSignal> AnalyzeSymbolLiveAsync(
+            string symbol, string range, IReadOnlyList<Candle1> marketIndexCandles, AccumulationWeights weights)
+        {
+            var dailyCandles = await GetCandlesCachedAsync(symbol, "1d", range);
+
+            if (dailyCandles.Count == 0)
+            {
+                return new WhaleSignal
+                {
+                    Symbol = symbol,
+                    Interval = "1d",
+                    Time = DateTime.UtcNow,
+                    Action = "Hata",
+                    Reason = "Veri alınamadı",
+                    DataSufficient = false
+                };
+            }
+
+            int index = dailyCandles.Count - 1;
+            var c = dailyCandles[index];
+            var comp = AccumulationScoring.Compute(dailyCandles, index, weights);
+
+            if (!comp.DataSufficient)
+            {
+                return new WhaleSignal
+                {
+                    Symbol = symbol,
+                    Interval = "1d",
+                    Time = c.Time,
+                    Value = c.Close.ToString("F2"),
+                    Action = "Bekle",
+                    Reason = "Yetersiz geçmiş veri (analiz için en az " + weights.MinHistoryBars + " günlük mum gerekli)",
+                    DataSufficient = false
+                };
+            }
+
+            var dailyCloses = new List<double>(dailyCandles.Count);
+            for (int i = 0; i < dailyCandles.Count; i++) dailyCloses.Add(dailyCandles[i].Close);
+
+            string action = "Bekle";
+
+            // Breakout check: today's close vs the high/low of the trailing compression window,
+            // EXCLUDING today.
+            bool isBreakoutUp = false, isBreakoutDown = false;
+            if (index >= weights.CompressionWindow)
+            {
+                double rangeHigh = double.MinValue, rangeLow = double.MaxValue;
+                for (int i = index - weights.CompressionWindow; i < index; i++)
+                {
+                    rangeHigh = Math.Max(rangeHigh, dailyCandles[i].High);
+                    rangeLow = Math.Min(rangeLow, dailyCandles[i].Low);
+                }
+                isBreakoutUp = c.Close > rangeHigh;
+                isBreakoutDown = c.Close < rangeLow;
+            }
+
+            if (comp.Score >= weights.CompositeThresholdBreakout && (isBreakoutUp || isBreakoutDown))
+            {
+                double dailyEma10 = EMA(dailyCloses, 10, index);
+                double dailyEma50 = EMA(dailyCloses, 50, index);
+                var (macd, signalLine) = MACD(dailyCloses, index);
+                double rsi = RSI(dailyCloses, 14, index);
+
+                double? marketEma50 = null;
+                double? marketClose = null;
+                if (marketIndexCandles.Count > 50)
+                {
+                    var marketCloses = marketIndexCandles.Select(x => x.Close).ToList();
+                    int marketIdx = marketCloses.Count - 1;
+                    marketEma50 = EMA(marketCloses, 50, marketIdx);
+                    marketClose = marketCloses[marketIdx];
+                }
+
+                bool TrendOk(bool up) =>
+                    !double.IsNaN(dailyEma10) && !double.IsNaN(dailyEma50) && !double.IsNaN(macd) && !double.IsNaN(rsi) &&
+                    (up ? dailyEma10 > dailyEma50 && macd > signalLine && rsi < 70
+                        : dailyEma10 < dailyEma50 && macd < signalLine && rsi > 30) &&
+                    (marketEma50 == null || double.IsNaN(marketEma50.Value) ||
+                        (up ? marketClose >= marketEma50 : marketClose <= marketEma50));
+
+                if (isBreakoutUp && TrendOk(true)) action = "Alış";
+                else if (isBreakoutDown && TrendOk(false)) action = "Satış";
+            }
+
+            if (action == "Bekle" && comp.Score >= weights.CompositeThresholdHigh)
+            {
+                if (comp.Cmf > weights.CmfSignThreshold) action = "Toplama";
+                else if (comp.Cmf < -weights.CmfSignThreshold) action = "Dağıtım";
+            }
+
+            var patternTags = DetectPatternTags(dailyCandles, index);
+            string reason = BuildReason(action, comp, patternTags);
+
+            return new WhaleSignal
+            {
+                Symbol = symbol,
+                Interval = "1d",
+                Time = c.Time,
+                Value = c.Close.ToString("F2"),
+                Action = action,
+                Reason = reason,
+                Score = Math.Round(comp.Score, 2),
+                Confidence = Math.Round(comp.Confidence, 2),
+                DataSufficient = true,
+                VolumeZ = Math.Round(comp.VolumeZ, 3),
+                CompressionPercentile = Math.Round(comp.CompressionPercentile, 1),
+                Cmf = Math.Round(comp.Cmf, 4),
+                CmfSlope = Math.Round(comp.CmfSlope, 5),
+                VwapDeviationPct = Math.Round(comp.VwapDeviationPct * 100, 2)
+            };
+        }
+
+        /// <summary>
+        /// Offline strategy validation: walks historical bars using the SAME AccumulationScoring.Compute
+        /// used live, then -- and only here -- looks `forwardDays` ahead to grade already-fired signals
+        /// against an ATR stop-loss/take-profit band. Never influences what fires; only grades it after
+        /// the fact. Intentionally simpler than the live path (no cross-symbol market-index trend filter,
+        /// since date-aligning an independently-fetched index series across arbitrary historical bars is
+        /// out of scope for this offline tool).
+        /// </summary>
+        public async Task<List<BacktestResult>> BacktestSymbolAsync(
+            string symbol, string range, int forwardDays, AccumulationWeights weights)
+        {
+            var dailyCandles = await GetCandlesCachedAsync(symbol, "1d", range);
+            var results = new List<BacktestResult>();
+            if (dailyCandles.Count < weights.MinHistoryBars + forwardDays + 1) return results;
+
+            var dailyCloses = new List<double>(dailyCandles.Count);
+            for (int i = 0; i < dailyCandles.Count; i++) dailyCloses.Add(dailyCandles[i].Close);
+
+            for (int i = weights.MinHistoryBars; i < dailyCandles.Count - forwardDays; i++)
+            {
+                var comp = AccumulationScoring.Compute(dailyCandles, i, weights);
+                if (!comp.DataSufficient || comp.Score < weights.CompositeThresholdBreakout) continue;
+
+                var c = dailyCandles[i];
+                string action = "Bekle";
+
+                bool isBreakoutUp = false, isBreakoutDown = false;
+                if (i >= weights.CompressionWindow)
+                {
+                    double rangeHigh = double.MinValue, rangeLow = double.MaxValue;
+                    for (int k = i - weights.CompressionWindow; k < i; k++)
+                    {
+                        rangeHigh = Math.Max(rangeHigh, dailyCandles[k].High);
+                        rangeLow = Math.Min(rangeLow, dailyCandles[k].Low);
+                    }
+                    isBreakoutUp = c.Close > rangeHigh;
+                    isBreakoutDown = c.Close < rangeLow;
+                }
+
+                double dailyEma10 = EMA(dailyCloses, 10, i);
+                double dailyEma50 = EMA(dailyCloses, 50, i);
+                var (macd, signalLine) = MACD(dailyCloses, i);
+                double rsi = RSI(dailyCloses, 14, i);
+                bool TrendOk(bool up) =>
+                    !double.IsNaN(dailyEma10) && !double.IsNaN(dailyEma50) && !double.IsNaN(macd) && !double.IsNaN(rsi) &&
+                    (up ? dailyEma10 > dailyEma50 && macd > signalLine && rsi < 70
+                        : dailyEma10 < dailyEma50 && macd < signalLine && rsi > 30);
+
+                if (isBreakoutUp && TrendOk(true)) action = "Alış";
+                else if (isBreakoutDown && TrendOk(false)) action = "Satış";
+                else if (comp.Score >= weights.CompositeThresholdHigh)
+                {
+                    if (comp.Cmf > weights.CmfSignThreshold) action = "Toplama";
+                    else if (comp.Cmf < -weights.CmfSignThreshold) action = "Dağıtım";
+                }
+
+                if (action == "Bekle") continue; // only grade bars where something actually fired
+
+                double entry = c.Close;
+                double future = dailyCandles[i + forwardDays].Close;
+                double atr = ATR(dailyCandles, 14, i);
+                if (double.IsNaN(atr)) continue;
+
+                bool isBuyLike = action == "Alış" || action == "Toplama";
+                double stopLoss = isBuyLike ? entry - atr * 2 : entry + atr * 2;
+                double takeProfit = isBuyLike ? entry + atr * 3 : entry - atr * 3;
+
+                double score;
+                bool hitTp, hitSl;
+                if (isBuyLike)
+                {
+                    hitTp = future >= takeProfit;
+                    hitSl = future <= stopLoss;
+                    score = hitTp ? 100 : hitSl ? 0 : Math.Clamp((future - stopLoss) / (takeProfit - stopLoss) * 100, 0, 100);
+                }
+                else
+                {
+                    hitTp = future <= takeProfit;
+                    hitSl = future >= stopLoss;
+                    score = hitTp ? 100 : hitSl ? 0 : Math.Clamp((stopLoss - future) / (stopLoss - takeProfit) * 100, 0, 100);
+                }
+
+                results.Add(new BacktestResult
+                {
+                    Symbol = symbol,
+                    SignalTime = c.Time,
+                    Action = action,
+                    EntryPrice = Math.Round(entry, 2),
+                    ForwardReturnPct = Math.Round((future - entry) / entry * 100, 2),
+                    HitTakeProfit = hitTp,
+                    HitStopLoss = hitSl,
+                    BacktestScore = Math.Round(score, 2)
+                });
+            }
+
+            return results;
+        }
+
+        // --- Candlestick pattern tags: informational only, never gate Action/Score ---
+        private static List<string> DetectPatternTags(List<Candle1> candles, int i)
+        {
+            var tags = new List<string>();
+            var c = candles[i];
+
+            if (i > 0)
+            {
+                var prev = candles[i - 1];
+                if (c.Close > c.Open && prev.Close < prev.Open && c.Low < prev.Low && c.High > prev.High)
+                    tags.Add("Yutan Boğa Deseni");
+                else if (c.Close < c.Open && prev.Close > prev.Open && c.Low < prev.Low && c.High > prev.High)
+                    tags.Add("Yutan Ayı Deseni");
+
+                double body = Math.Abs(c.Close - c.Open);
+                double lowerShadow = Math.Min(c.Open, c.Close) - c.Low;
+                double upperShadow = c.High - Math.Max(c.Open, c.Close);
+                if (lowerShadow > body * 2 && upperShadow < body * 0.5)
+                {
+                    if (prev.Close > c.Close) tags.Add("Çekiç Deseni");
+                    else if (prev.Close < c.Close) tags.Add("Asılı Adam Deseni");
+                }
+            }
+
+            if (i > 2)
+            {
+                var c1 = candles[i - 2]; var c2 = candles[i - 1]; var c3 = c;
+                if (c1.Close > c1.Open && c2.Close > c2.Open && c3.Close > c3.Open && c2.Close > c1.Close && c3.Close > c2.Close)
+                    tags.Add("Üç Beyaz Asker Deseni");
+                else if (c1.Close < c1.Open && c2.Close < c2.Open && c3.Close < c3.Open && c2.Close < c1.Close && c3.Close < c2.Close)
+                    tags.Add("Üç Siyah Karga Deseni");
+            }
+
+            return tags;
+        }
+
+        private static string BuildReason(string action, AccumulationComponents comp, List<string> patternTags)
+        {
+            var parts = new List<string>();
+            switch (action)
+            {
+                case "Toplama": parts.Add($"Toplama sinyali (CMF={comp.Cmf:F3})"); break;
+                case "Dağıtım": parts.Add($"Dağıtım sinyali (CMF={comp.Cmf:F3})"); break;
+                case "Alış": parts.Add("Sıkışma sonrası yukarı kırılım + trend onayı"); break;
+                case "Satış": parts.Add("Sıkışma sonrası aşağı kırılım + trend onayı"); break;
+                default: parts.Add("Belirgin anomali yok"); break;
+            }
+            if (patternTags.Count > 0) parts.Add(string.Join(" + ", patternTags));
+            return string.Join(" + ", parts);
+        }
+
+        // --- Shared TA helpers (unchanged math, reused by both live and backtest paths) ---
         public static double ATR(List<Candle1> candles, int period, int index)
         {
             if (index < period) return double.NaN;
@@ -223,29 +303,18 @@ namespace CoreApp.Services
             for (int i = index - period + 1; i <= index; i++)
             {
                 if (i <= 0) continue;
-                double highLow = candles[i].High - candles[i].Low;
-                double highClose = Math.Abs(candles[i].High - candles[i - 1].Close);
-                double lowClose = Math.Abs(candles[i].Low - candles[i - 1].Close);
-                trSum += Math.Max(highLow, Math.Max(highClose, lowClose));
+                trSum += Indicators.TrueRange(candles[i], candles[i - 1]);
             }
             return trSum / period;
         }
 
         public static double EMA(List<double> prices, int period, int index)
         {
-            if (index < period - 1 || index >= prices.Count)
-            {
-                return double.NaN;
-            }
-
-            // İlk EMA değeri, periyodun basit ortalamasıdır.
+            if (index < period - 1 || index >= prices.Count) return double.NaN;
             double ema = prices.Skip(index - period + 1).Take(period).Average();
-
             double multiplier = 2.0 / (period + 1);
             for (int i = index - period + 1; i <= index; i++)
-            {
                 ema = (prices[i] - ema) * multiplier + ema;
-            }
             return ema;
         }
 
@@ -256,9 +325,7 @@ namespace CoreApp.Services
             if (double.IsNaN(emaFast) || double.IsNaN(emaSlow)) return (double.NaN, double.NaN);
 
             double macd = emaFast - emaSlow;
-            List<double> macdList = new List<double>();
-
-            // MACD sinyal hattı için gerekli MACD değerlerini güvenli şekilde al
+            var macdList = new List<double>();
             int startIndex = Math.Max(0, index - signalPeriod);
             for (int i = startIndex; i <= index; i++)
             {
@@ -266,26 +333,20 @@ namespace CoreApp.Services
                 double es = EMA(closes, slow, i);
                 if (!double.IsNaN(ef) && !double.IsNaN(es)) macdList.Add(ef - es);
             }
-
             double signal = macdList.Any() ? macdList.Average() : double.NaN;
             return (macd, signal);
         }
 
         public static double RSI(List<double> closes, int period, int index)
         {
-            // İndikatör için yeterli veri yoksa NaN döndür
             if (index < period) return double.NaN;
-
             double gain = 0, loss = 0;
-            // Döngü başlangıcı, indeksin 0'dan büyük olmasını garantiler
             for (int i = index - period + 1; i <= index; i++)
             {
                 if (i <= 0) continue;
                 double change = closes[i] - closes[i - 1];
-                if (change > 0) gain += change;
-                else loss -= change;
+                if (change > 0) gain += change; else loss -= change;
             }
-
             if (loss == 0) return 100;
             double rs = gain / loss;
             return 100 - (100 / (1 + rs));
